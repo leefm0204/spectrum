@@ -18,9 +18,10 @@ jobs:
 
       - name: Install dependencies & cross toolchain
         run: |
-          sudo apt-get install -y pkg-config doxygen libgtest-dev \
+          sudo apt-get install -y alsa-base alsa-utils pkg-config doxygen \
+            libasound2-dev libfftw3-dev libgtest-dev libavcodec-dev libavformat-dev \
+            libswresample-dev libavfilter-dev libcurl4-openssl-dev libxml++2.6-dev \
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-
       - name: Install QEMU user-mode emulator
         run: sudo apt-get install -y qemu-user
         
@@ -50,7 +51,6 @@ jobs:
             libasound2-dev libfftw3-dev libgtest-dev libavcodec-dev libavformat-dev \
             libswresample-dev libavfilter-dev libcurl4-openssl-dev libxml++2.6-dev \
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-
       - uses: actions/checkout@v3
 
       - name: Configure CMake (ARM64)
@@ -85,7 +85,6 @@ jobs:
             libasound2-dev libfftw3-dev libgtest-dev libavcodec-dev libavformat-dev \
             libswresample-dev libavfilter-dev libcurl4-openssl-dev libxml++2.6-dev \
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-
       - uses: actions/checkout@v3
 
       - name: Configure CMake (ARM64)
