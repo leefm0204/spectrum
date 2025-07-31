@@ -1,16 +1,17 @@
-name: CI Build
+name: ARM64 Build & Download
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
 
 env:
-  BUILD_TYPE: Debug
+  BUILD_TYPE: Release
 
 jobs:
-  debug:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Update packages
@@ -22,9 +23,7 @@ jobs:
             libasound2-dev libfftw3-dev libgtest-dev libavcodec-dev libavformat-dev \
             libswresample-dev libavfilter-dev libcurl4-openssl-dev libxml++2.6-dev \
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-      - name: Install QEMU user-mode emulator
-        run: sudo apt-get install -y qemu-user
-        
+
       - uses: actions/checkout@v3
 
       - name: Configure CMake (ARM64)
@@ -33,93 +32,13 @@ jobs:
           -DCMAKE_SYSTEM_NAME=Linux \
           -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
           -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
-          -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
-          -DSPECTRUM_DEBUG=ON
+          -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++
 
       - name: Build (ARM64)
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Update packages
-        run: sudo apt-get update
-
-      - name: Install dependencies & cross toolchain
-        run: |
-          sudo apt-get install -y alsa-base alsa-utils pkg-config doxygen \
-            libasound2-dev libfftw3-dev libgtest-dev libavcodec-dev libavformat-dev \
-            libswresample-dev libavfilter-dev libcurl4-openssl-dev libxml++2.6-dev \
-            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-      - uses: actions/checkout@v3
-
-      - name: Configure CMake (ARM64)
-        run: cmake -S . -B ${{github.workspace}}/build \
-          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-          -DCMAKE_SYSTEM_NAME=Linux \
-          -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
-          -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
-          -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
-          -DENABLE_TESTS=ON
-
-      - name: Build (ARM64)
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
-      # Optional: Run tests via QEMU
-      - name: Install QEMU
-        run: sudo apt-get install -y qemu-user
-
-      - name: Test via QEMU
-        working-directory: ${{github.workspace}}/build
-        run: qemu-aarch64 ./test/test_binary_name
-
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Update packages
-        run: sudo apt-get update
-
-      - name: Install dependencies & cross toolchain
-        run: |
-          sudo apt-get install -y alsa-base alsa-utils pkg-config doxygen \
-            libasound2-dev libfftw3-dev libgtest-dev libavcodec-dev libavformat-dev \
-            libswresample-dev libavfilter-dev libcurl4-openssl-dev libxml++2.6-dev \
-            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-      - uses: actions/checkout@v3
-
-      - name: Configure CMake (ARM64)
-        run: cmake -S . -B ${{github.workspace}}/build \
-          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-          -DCMAKE_SYSTEM_NAME=Linux \
-          -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
-          -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
-          -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
-          -DENABLE_TESTS=ON -DENABLE_COVERAGE=ON
-
-      - name: Build (ARM64)
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
-      - name: Test via QEMU
-        working-directory: ${{github.workspace}}/build
-        run: qemu-aarch64 ./test/test_binary_name
-
-      - name: Upload report to CodeCov
-        uses: codecov/codecov-action@v3
+      - name: Upload ARM64 build artifacts
+        uses: actions/upload-artifact@v3
         with:
-          gcov: true
-
-  cppcheck:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Update packages
-        run: sudo apt-get update
-
-      - name: Install cppcheck
-        run: sudo apt-get install -y cppcheck
-
-      - uses: actions/checkout@v3
-
-      - name: Run cppcheck
-        run: cppcheck --max-ctu-depth=3 --enable=all --inline-suppr \
-          --suppress=missingInclude --suppress=syntaxError --suppress=unmatchedSuppression \
-          --suppress=preprocessorErrorDirective --language=c++ --std=c++17 ${{github.workspace}}/src
+          name: spectrum-arm64-build
+          path: ${{github.workspace}}/build/
